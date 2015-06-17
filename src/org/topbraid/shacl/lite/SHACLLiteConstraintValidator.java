@@ -7,12 +7,26 @@ import java.util.Set;
 
 import org.topbraid.shacl.vocabulary.SHACL;
 
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFList;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.shared.PrefixMapping;
+import com.hp.hpl.jena.shared.impl.PrefixMappingImpl;
+import com.hp.hpl.jena.sparql.path.Path;
+import com.hp.hpl.jena.sparql.path.PathLib;
+import com.hp.hpl.jena.sparql.path.PathParser;
+import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 import com.hp.hpl.jena.vocabulary.RDFS;
 
@@ -26,7 +40,9 @@ import com.hp.hpl.jena.vocabulary.RDFS;
 public class SHACLLiteConstraintValidator {
 	
 	private Model queryModel;
-	
+	private PrefixMapping pmap  = new PrefixMappingImpl() ;
+	private Path path;
+	private String uri = "http://www.example.com/ex#firstPath" ;
 	private Map<Resource, Set<Resource>> visitedNodes2Shapes = new HashMap<Resource, Set<Resource>>(); 
 	
 	
@@ -36,6 +52,10 @@ public class SHACLLiteConstraintValidator {
 	 */
 	public SHACLLiteConstraintValidator(Model queryModel) {
 		this.queryModel = queryModel;
+		this.pmap.setNsPrefixes(PrefixMapping.Standard) ;
+		this.pmap.setNsPrefix("sh", "http://www.w3.org/ns/shacl#");
+		this.pmap.setNsPrefix("ex", "http://www.example.com/ex#");
+
 	}
 
 	
@@ -46,7 +66,6 @@ public class SHACLLiteConstraintValidator {
 	 * @return a Model of constraint violations
 	 */
 	public Model validateNodeAgainstShape(Resource shape, Resource focusNode) {
-		
 		// Remember that we had seen this already
 		Set<Resource> set = visitedNodes2Shapes.get(focusNode);
 		if(set != null && set.contains(shape)) {
@@ -113,16 +132,30 @@ public class SHACLLiteConstraintValidator {
 		
 		// Property constraints
 		Statement predicateS = constraint.getProperty(SHACL.predicate);
-		if(predicateS == null || !predicateS.getObject().isURIResource()) {
-			return resultModel; // Or throw exception
+	//!predicateS.getObject().isURIResource()
+		if(predicateS == null || !(predicateS.getObject().isURIResource() || predicateS.getObject().isLiteral())) {
+			return resultModel;
 		}
-		
-		Property predicate = queryModel.getProperty(predicateS.getResource().getURI());
-		
+	
+		Property predicate;
+		if(predicateS.getObject().isLiteral()){
+			path = PathParser.parse(predicateS.getString(), pmap) ;
+			PathLib.install(uri, path) ;
+			predicate = queryModel.getProperty(queryModel.getResource(predicateS.getString().split("/")[0]).getURI());
+		}
+		else{
+			predicate = queryModel.getProperty(predicateS.getResource().getURI());
+		}
 		// sh:allowedValues
 		Statement allowedValuesS = constraint.getProperty(SHACL.allowedValues);
 		if(allowedValuesS != null && allowedValuesS.getObject().isResource()) {
 			validateAllowedValues(focusNode, predicate, allowedValuesS.getResource(), resultModel);
+		}
+		
+		// sh:sameValues
+		Statement sameValuesS = constraint.getProperty(SHACL.sameValues);
+		if(sameValuesS != null) {
+			validateSameValues(focusNode, predicate, sameValuesS.getResource(), resultModel);
 		}
 		
 		// sh:hasValue
@@ -202,6 +235,46 @@ public class SHACLLiteConstraintValidator {
 				error.addProperty(SHACL.message, "Value " + s.getObject() + " not among the allowed values set " + allowedValues);
 			}
 		}		
+	}
+	
+	// Validates sh:sameValues
+	private void validateSameValues(Resource focusNode, Property predicate, Resource sameValues, Model resultModel) {
+System.out.println("asd");
+		 RDFList rdfList = sameValues.as( RDFList.class );
+         ExtendedIterator<RDFNode> items = rdfList.iterator();
+         Literal firstItem = items.next().asLiteral();
+         
+         
+         while ( items.hasNext() ) {
+             Literal item = items.next().asLiteral();
+             PathLib.install(uri, path) ;
+             
+             System.out.println(path);
+             
+             String queryString =  "PREFIX sh: <http://www.w3.org/ns/shacl#> "+
+            		 "PREFIX ex: <http://www.example.com/ex#> "+
+             		 "SELECT ?object "+
+									"WHERE {"+
+									"	<"+focusNode.getURI()+"> ex:firstPath ?focusValue ."+
+									"	<"+focusNode.getURI()+"> ex:path ?object ."+
+									"	FILTER (?object != ?focusValue) ."+
+									"}  " ;
+             
+             System.out.println(queryString);
+             Query query = QueryFactory.create(queryString) ;
+      
+            	 QueryExecution qexec = QueryExecutionFactory.create(query, queryModel);
+               ResultSet results = qexec.execSelect() ;
+               for ( ; results.hasNext() ; )
+               {
+                 QuerySolution soln = results.nextSolution() ;
+          
+                 Literal l = soln.getLiteral("object") ;   // Get a result variable - must be a literal
+                 System.out.println( focusNode.getURI()+" has:\n\tvalue1: "+l.getString());
+               }
+             
+          
+         }
 	}
 	
 

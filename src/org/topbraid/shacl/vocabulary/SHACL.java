@@ -95,6 +95,8 @@ public class SHACL {
     public final static Property abstract_ = ResourceFactory.createProperty(NS + "abstract");
 
     public final static Property allowedValues = ResourceFactory.createProperty(NS + "allowedValues");
+    
+    public final static Property sameValues = ResourceFactory.createProperty(NS + "sameValues");
 
     public final static Property argument = ResourceFactory.createProperty(NS + "argument");
 
