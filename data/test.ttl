@@ -17,7 +17,7 @@ ex:LHSExample
 ex:RHSExample
 	ex:someProperty2 3 .
 	
-ex:SameValuesExampleValidResource
+ex:MappingClass
     sh:nodeShape ex:SameValuesExampleShape;
     ex:someProperty 4 ;
 	ex:LHS ex:LHSExample ;	
