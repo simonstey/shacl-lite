@@ -12,13 +12,15 @@ ex:SameValuesExampleShape
 	] .
 
 ex:LHSExample
+	ex:LHS ex:MappingClass;
 	ex:someProperty 4 .
 
 ex:RHSExample
+	ex:LHS ex:LHSExample;
 	ex:someProperty2 3 .
 	
 ex:MappingClass
     sh:nodeShape ex:SameValuesExampleShape;
-    ex:someProperty 4 ;
+    ex:testProperty ("one" "two" "three" "four" "five") ;
 	ex:LHS ex:LHSExample ;	
     ex:RHS ex:RHSExample.

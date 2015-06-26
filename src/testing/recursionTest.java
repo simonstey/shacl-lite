@@ -10,7 +10,6 @@ public class recursionTest {
 		ZeroOrOnePath b1 = new ZeroOrOnePath(b);
 
 		ZeroOrMorePath c1 = new ZeroOrMorePath(c);
-
 		 
 		AltPath pa = new AltPath(b1,c1);
 

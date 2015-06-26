@@ -15,6 +15,7 @@ import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Resource;
 
 public class test {
 
@@ -28,15 +29,15 @@ public class test {
 		m.setNsPrefix("rdfs", rdfs);
 		
 		try {
-			m.read(new FileInputStream("data/test.ttl"),null,"TTL");
+			m.read(new FileInputStream("data/test2.ttl"),null,"TTL");
 			
 			String queryString =  "PREFIX sh: <http://www.w3.org/ns/shacl#> "+
             		 "PREFIX ex: <http://www.example.com/ex#> "+
-             		 "SELECT ?focusValue "+
+					"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"+
+             		 " SELECT ?focusValue "+
 									"WHERE {"+
-									"	ex:MappingClass ?prop ex:LHSExample ."+
-									"	ex:MappingClass <?prop>/ex:someProperty ?focusValue ."+
-									"}  " ;
+									"ex:c1 (^(ex:propA/ex:propB))* ?focusValue ."+
+									" } " ;
              
              System.out.println(queryString);
              Query query = QueryFactory.create(queryString) ;
@@ -47,8 +48,8 @@ public class test {
                {
                  QuerySolution soln = results.nextSolution() ;
           
-                 Literal l = soln.getLiteral("focusValue") ;   // Get a result variable - must be a literal
-                 System.out.println( "focusValue has:\n\tvalue1: "+l.getString());
+                 Resource l = soln.getResource("focusValue") ;   // Get a result variable - must be a literal
+                 System.out.println( "focusValue has:\n\tvalue1: "+l.getLocalName());
                }
              
 			

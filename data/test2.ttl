@@ -1,0 +1,13 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex: <http://www.example.com/ex#> .
+
+ex:a2 ex:propA ex:b1 .
+ex:b1 ex:propB ex:a1 .
+ex:a1 ex:propA ex:b1 .
+ex:b1 ex:propB ex:c1 .
+ex:c3 ex:propD ex:c4 .
+ex:c4 ex:propE ex:c1 .
+ex:c3 ex:propA ex:final .
