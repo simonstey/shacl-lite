@@ -36,7 +36,16 @@ public class test {
 					"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"+
              		 " SELECT ?focusValue "+
 									"WHERE {"+
-									"ex:c1 (^(ex:propA/ex:propB))* ?focusValue ."+
+
+									"ex:v1 ex:path ?path . {"
+									+ "?path ex:path1 ?f ." +
+									"?f a ?focusValue ." +
+									" FILTER EXISTS { ?path a ex:SeqPath . }}" +
+									"UNION" +
+									//"{ex:v1 ex:path ?path ." +
+									 "{?path ex:path2 ?f . " +
+									"?f a ?focusValue ." +
+									" FILTER EXISTS { ?path a ex:AltPath . }}" +
 									" } " ;
              
              System.out.println(queryString);

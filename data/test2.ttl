@@ -4,10 +4,19 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix ex: <http://www.example.com/ex#> .
 
-ex:a2 ex:propA ex:b1 .
+ex:a2 ex:propA ex:c3 .
 ex:b1 ex:propB ex:a1 .
 ex:a1 ex:propA ex:b1 .
 ex:b1 ex:propB ex:c1 .
 ex:c3 ex:propD ex:c4 .
 ex:c4 ex:propE ex:c1 .
 ex:c3 ex:propA ex:final .
+
+ex:v1 ex:path [ a ex:SeqPath;
+	ex:path1 [ a ex:SinglePath;
+		ex:path1 ex:A 
+	];
+	ex:path2 [ a ex:NotSinglePath;
+		ex:path1 ex:B 
+	] 
+] .
