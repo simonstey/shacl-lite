@@ -1,0 +1,294 @@
+# baseURI: http://example.org/testOnto
+# imports: http://www.w3.org/ns/shacl
+
+@prefix : <http://example.org/testOnto#> .
+@prefix ex: <http://example.org/testOnto#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix testOnto: <http://example.org/testOnto#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/testOnto>
+  rdf:type owl:Ontology ;
+  owl:versionInfo "Created with TopBraid Composer"^^xsd:string ;
+  sh:shapesGraph <http://www.w3.org/ns/shacl> ;
+.
+
+testOnto:alice
+  rdf:type testOnto:person ;
+  testOnto:knows testOnto:bob ;
+  testOnto:name "A. Foo" ;
+  testOnto:name "Alice Foo" ;
+  testOnto:name "Alice" ;
+  testOnto:test testOnto:b1 ;
+.
+testOnto:bob
+  rdf:type testOnto:person ;
+  testOnto:knows testOnto:alice ;
+  testOnto:knows testOnto:carol ;
+  testOnto:name "B. Bar" ;
+  testOnto:name "Bob Bar" ;
+  testOnto:name "Bob" ;
+.
+testOnto:carol
+  rdf:type testOnto:person ;
+  testOnto:knows testOnto:alice ;
+  testOnto:knows testOnto:bob ;
+  testOnto:name "C. Baz" ;
+  testOnto:name "Carol Baz" ;
+  testOnto:name "Carol" ;
+.
+
+testOnto:ExampleTemplate
+  rdf:type sh:ConstraintTemplate ;
+  rdfs:comment "Verifies that the given focus node (?this) has at least one value for the argument property (?argProperty)." ;
+  rdfs:label "Example Template" ;
+  sh:argument [
+      sh:predicate sh:propPath ;
+      sh:valueClass sh:Path ;
+    ] ;
+  sh:labelTemplate "The property {?argProperty} must have at least one value" ;
+  sh:message "The property {?argProperty} must have at least one value" ;
+  sh:sparql """
+    SELECT ?this (?this AS ?subject) (?propPath AS ?predicate) (?value AS ?object)
+    WHERE {
+        {BIND(testOnto:exampleFunction(?this,?propPath) AS ?value) .
+        }
+        UNION
+        {BIND(testOnto:exampleFunction(?this,?propPath) AS ?value) .
+        }
+    }
+    """ .
+    
+
+testOnto:exampleFunction
+  rdf:type sh:Function ;
+  rdfs:comment "Computes the sum of its two arguments ?arg1 and ?arg2." ;
+  sh:argument [
+      rdfs:comment "The first operand" ;
+      sh:predicate sh:arg1 ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The second operand" ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+		SELECT ?result2
+		WHERE {
+					?arg2 sh:path1 ?path1 .
+					?arg1 ?path1 ?result2
+		}
+		""" ;
+.
+testOnto:person
+  rdf:type sh:ShapeClass ;
+  sh:constraint [
+      rdf:type testOnto:ExampleTemplate ;
+      sh:propPath testOnto:testPath ;
+    ] ;
+.
+testOnto:testPath
+  rdf:type sh:SeqPath ;
+  sh:path1 testOnto:knows ;
+  sh:path2 testOnto:knows ;
+.
+
+sh:SinglePath
+  rdfs:subClassOf sh:Path ;
+.
+
+sh:SeqPath
+  rdfs:subClassOf sh:Path ;
+.
+
+sh:resolvePropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+    SELECT (?returnValue AS ?result)
+		WHERE {
+				BIND(IF(sh:hasType(?arg2,sh:SeqPath),sh:resolveSeqPropPath(?arg1,?arg2),
+					 IF(sh:hasType(?arg2,sh:AltPath),sh:resolveAltPropPath(?arg1,?arg2),
+					 IF(sh:hasType(?arg2,sh:InversePath),sh:resolveInversePropPath(?arg1,?arg2),
+					 IF(sh:hasType(?arg2,sh:ZeroOrMorePath),sh:resolveZeroOrMorePropPath(?arg1,?arg2),
+					 IF(sh:hasType(?arg2,sh:OneOrMorePath),sh:resolveOneOrMorePropPath(?arg1,?arg2),
+					 IF(sh:hasType(?arg2,sh:ZeroOrOnePath),sh:resolveZeroOrOnePropPath(?arg1,?arg2),
+					 IF(sh:hasType(?arg2,rdf:Property),sh:propertyValue(?arg1,?arg2),
+					 IF(sh:hasType(?arg2,sh:SinglePath),sh:resolveSinglePropPath(?arg1,?arg2), 'error1')))))))) AS ?returnValue)
+		}
+		""" .
+
+sh:resolveAltPropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+      sh:valueType rdfs:Resource ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:datatype sh:Path ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+    SELECT (?returnValue AS ?result)
+	WHERE {
+			?arg2 sh:path1 ?path1 ;
+			 sh:path2 ?path2 .
+			{
+				BIND(sh:resolvePropPath(?arg1,?path1) AS ?returnValue) .
+			} 
+			UNION
+			{
+				BIND(sh:resolvePropPath(?arg1,?path2) AS ?returnValue) .
+			}
+		}
+	""" 
+.
+sh:resolveInversePropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+      sh:valueType rdfs:Resource ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:datatype sh:Path ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+					SELECT (?returnValue AS ?result)
+		WHERE {
+							?arg2 sh:path1 ?path1 ;
+					  sh:path2 ?path2 .
+				BIND(sh:resolveInversePropPath(?arg1,?path1) AS ?returnValue) .
+			}
+		""" 
+.
+sh:resolveOneOrMorePropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+      sh:valueType rdfs:Resource ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:datatype sh:Path ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+					SELECT (?returnValue AS ?result)
+		WHERE {
+							?arg2 sh:path1 ?path1 ;
+					  sh:path2 ?path2 .
+				BIND(sh:resolvePropPath(?arg1,?arg2) AS ?focusNodes) .
+				BIND (IF(bound(?focusNodes), sh:resolvePropPath(?focusNodes,?arg2), 'error') AS ?returnValue) .
+			}
+		""" .
+
+sh:resolveSeqPropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+      sh:valueType rdfs:Resource ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:datatype sh:Path ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+		SELECT (?returnValue AS ?result)
+		WHERE {
+				?arg2 sh:path1 ?path1 ;
+					  sh:path2 ?path2 .
+				BIND(sh:resolvePropPath(?arg1,?path1) AS ?focusNodes) .
+				BIND (IF(bound(?focusNodes), sh:resolvePropPath(?focusNodes,?path2), 'erro2r') AS ?returnValue) .
+			}
+				""" 
+.
+sh:resolveSinglePropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+      sh:valueType rdfs:Resource ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:datatype sh:Path ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+					SELECT (?returnValue AS ?result)
+		WHERE {
+				?arg2 sh:path1 ?path1 .
+				?arg1 ?path1  ?returnValue .
+							
+		}
+		""" 
+.
+sh:resolveZeroOrMorePropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+      sh:valueType rdfs:Resource ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:datatype sh:Path ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+					SELECT (?returnValue AS ?result)
+		WHERE {
+							?arg2 sh:path1 ?path1 ;
+					  sh:path2 ?path2 .
+				BIND(sh:resolvePropPath(?arg1,?arg2) AS ?focusNodes) .
+				BIND (IF(bound(?focusNodes), sh:resolvePropPath(?focusNodes,?arg2), ?arg1) AS ?returnValue) .
+			}
+		""" 
+.
+sh:resolveZeroOrOnePropPath
+  rdf:type sh:Function ;
+  rdfs:comment "resolves a property path and points to results" ;
+  sh:argument [
+      rdfs:comment "The focus node." ;
+      sh:predicate sh:arg1 ;
+      sh:valueType rdfs:Resource ;
+    ] ;
+  sh:argument [
+      rdfs:comment "The path" ;
+      sh:datatype sh:Path ;
+      sh:predicate sh:arg2 ;
+    ] ;
+  sh:sparql """
+				SELECT (?returnValue AS ?result)
+		WHERE {
+							?arg2 sh:path1 ?path1 ;
+					  sh:path2 ?path2 .
+				BIND(sh:resolvePropPath(?arg1,?arg2) AS ?focusNodes) .
+				BIND (IF(bound(?focusNodes), sh:resolvePropPath(?focusNodes,?path1), ?arg1) AS ?returnValue) .
+			}	
+		""" 
+.

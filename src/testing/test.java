@@ -34,18 +34,10 @@ public class test {
 			String queryString =  "PREFIX sh: <http://www.w3.org/ns/shacl#> "+
             		 "PREFIX ex: <http://www.example.com/ex#> "+
 					"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"+
-             		 " SELECT ?focusValue "+
+             		 " SELECT ?focusValue ?t "+
 									"WHERE {"+
-
-									"ex:v1 ex:path ?path . {"
-									+ "?path ex:path1 ?f ." +
-									"?f a ?focusValue ." +
-									" FILTER EXISTS { ?path a ex:SeqPath . }}" +
-									"UNION" +
-									//"{ex:v1 ex:path ?path ." +
-									 "{?path ex:path2 ?f . " +
-									"?f a ?focusValue ." +
-									" FILTER EXISTS { ?path a ex:AltPath . }}" +
+								"ex:a2 ex:propA ?focusValue ."+
+									" {BIND(bound(?focusValue) as ?t)} UNION {BIND(bound(?focusValue) as ?t)}"+
 									" } " ;
              
              System.out.println(queryString);
@@ -53,12 +45,14 @@ public class test {
       
             	 QueryExecution qexec = QueryExecutionFactory.create(query, m);
                ResultSet results = qexec.execSelect() ;
+               for(String s : results.getResultVars())
+            	   System.out.println(s);
                for ( ; results.hasNext() ; )
                {
                  QuerySolution soln = results.nextSolution() ;
-          
-                 Resource l = soln.getResource("focusValue") ;   // Get a result variable - must be a literal
-                 System.out.println( "focusValue has:\n\tvalue1: "+l.getLocalName());
+     
+                 Literal l = soln.getLiteral("t") ;   // Get a result variable - must be a literal
+                 System.out.println( "focusValue has:\n\tvalue1: "+l.toString());
                }
              
 			
