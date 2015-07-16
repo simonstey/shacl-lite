@@ -20,9 +20,12 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFList;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.shared.impl.PrefixMappingImpl;
+import com.hp.hpl.jena.sparql.path.P_Link;
+import com.hp.hpl.jena.sparql.path.P_ReverseLink;
 import com.hp.hpl.jena.sparql.path.Path;
 import com.hp.hpl.jena.sparql.path.PathLib;
 import com.hp.hpl.jena.sparql.path.PathParser;
@@ -98,8 +101,15 @@ public class SHACLLiteConstraintValidator {
 	 */
 	public Model validateGraph() {
 		Model resultModel = ModelFactory.createDefaultModel();
-		for(Statement s : queryModel.listStatements(null, RDF.type, (RDFNode)null).toList()) {
+		for(Statement s : queryModel.listStatements(null, ResourceFactory.createProperty("http://www.w3.org/ns/shacl#propA"), (RDFNode)null).toList()) {
 			resultModel.add(new SHACLLiteConstraintValidator(queryModel).validateNodeAgainstShape(s.getResource(), s.getSubject()));
+			
+			Resource subject = s.getSubject();
+			Property predicate = s.getPredicate();
+			Statement s2 = subject.getProperty(predicate);
+			Path p = new P_ReverseLink(s2.getResource().asNode());
+			
+			System.out.println(p.toString());
 		}
 		for(Statement s : queryModel.listStatements(null, SHACL.nodeShape, (RDFNode)null).toList()) {
 			resultModel.add(new SHACLLiteConstraintValidator(queryModel).validateNodeAgainstShape(s.getResource(), s.getSubject()));
