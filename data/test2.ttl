@@ -11,13 +11,16 @@ sh:v1 sh:propA ex:c3 ; a ex:O .
 ex:b1 ex:propB ex:a1 ; a ex:O .
 ex:a1 sh:propA ex:b1 ; a ex:O .
 ex:b1 ex:propB ex:c1 ; a ex:O .
-ex:c3 sh:propD ex:c4 ; a ex:O .
+ex:c3 sh:propD ex:c4 ; a ex:O ; sh:propD ex:c5 .
 ex:c4 ex:propE ex:c1 ; a ex:O .
 ex:c3 sh:propA ex:final .
 
 
 sh:v1 a sh:O;
 	sh:path [ a sh:SeqPath;
+		sh:path1 [ a sh:AltPath;
 		sh:path1 sh:propA ;
+		sh:path2 sh:propB 
+	] ;
 		sh:path2 sh:propD 
 	] .

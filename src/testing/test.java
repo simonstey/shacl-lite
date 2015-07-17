@@ -53,49 +53,40 @@ public class test {
 		try {
 			m.read(new FileInputStream("data/test2.ttl"),null,"TTL");
 			
-//			String queryString =  "PREFIX sh: <http://www.w3.org/ns/shacl#> "+
-//            		 "PREFIX ex: <http://www.example.com/ex#> "+
-//					"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"+
-//             		 " SELECT ?focusValue ?t "+
-//									"WHERE {"+
-//								"ex:a2 ex:propA ?focusValue ."+
-//									" {BIND(bound(?focusValue) as ?t)} UNION {BIND(bound(?focusValue) as ?t)}"+
-//									" } " ;
-//             
-//             System.out.println(queryString);
-//             Query query = QueryFactory.create(queryString) ;
-//      
-//            	 QueryExecution qexec = QueryExecutionFactory.create(query, m);
-//               ResultSet results = qexec.execSelect() ;
-//               for(String s : results.getResultVars())
-//            	   System.out.println(s);
-//               for ( ; results.hasNext() ; )
-//               {
-//                 QuerySolution soln = results.nextSolution() ;
-//     
-//                 Literal l = soln.getLiteral("t") ;   // Get a result variable - must be a literal
-//                 System.out.println( "focusValue has:\n\tvalue1: "+l.toString());
-//               }
-//               Individual subject = m.getIndividual("ex:a2");
-//             for (StmtIterator j = subject.listProperties(); j.hasNext(); ) {
-//                 Statement s = j.next();
-//                 System.out.print( "    " + s.getPredicate().getLocalName() + " -> " );
-//
-//                 if (s.getObject().isLiteral()) {
-//                     System.out.println( s.getLiteral().getLexicalForm() );
-//                 }
-//                 else {
-//                     System.out.println( s.getObject() );
-//                 }
-//             }
-//			SHACLLiteConstraintValidator validator = new SHACLLiteConstraintValidator(m);
-//			validator.validateGraph();
-Resource v1 = m.getResource(NS + "v1");
-System.out.println(v1.toString());
+			Resource v1 = m.getResource(NS + "v1");
+			System.out.println(v1.toString());
 			Path p = createPath(m.getResource(NS + "v1"),m.getProperty(NS + "path"));
 			PrefixMapping prefixMapping = m.getResource(NS + "v1").getModel().getGraph().getPrefixMapping();
 			String str = PathWriter.asString(p, new Prologue(prefixMapping));
 			System.out.println(str);
+			
+			String queryString =  "PREFIX sh: <http://www.w3.org/ns/shacl#> "+
+            		 "PREFIX ex: <http://www.example.com/ex#> "+
+					"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>"+
+             		 " SELECT ?focusValue "+
+									"WHERE {"+
+								"sh:v1 "+ str +" ?focusValue ."+
+									" } " ;
+             
+             System.out.println(queryString);
+             Query query = QueryFactory.create(queryString) ;
+      
+            	 QueryExecution qexec = QueryExecutionFactory.create(query, m);
+               ResultSet results = qexec.execSelect() ;
+               for(String s : results.getResultVars())
+            	   System.out.println(s);
+               for ( ; results.hasNext() ; )
+               {
+                 QuerySolution soln = results.nextSolution() ;
+     
+                 Resource l = soln.getResource("focusValue") ;   // Get a result variable - must be a literal
+                 System.out.println( "focusValue has:\n\tvalue1: "+l.toString());
+               }
+               
+//               
+//			SHACLLiteConstraintValidator validator = new SHACLLiteConstraintValidator(m);
+//			validator.validateGraph();
+
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
